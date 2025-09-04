@@ -1,16 +1,21 @@
 name: Update Chance CSV
 
+# 👇 Dă voie bot-ului GitHub Actions să facă push în repo
+permissions:
+  contents: write
+
 on:
   schedule:
     - cron: "0 * * * *"   # rulează la fiecare oră
-  workflow_dispatch:       # îl poți porni și manual
+  workflow_dispatch:       # îl poți porni manual din Actions
 
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download Chance CSV (via Worker)
         run: |
