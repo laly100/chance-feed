@@ -2,50 +2,33 @@ name: Update Chance CSV
 
 on:
   schedule:
-    # Duminică–Joi
-    - cron: "25 7 * * 0-4"   # 09:25 IL
+    - cron: "25 7 * * 0-4"   # 09:25 IL (duminică-joi)
     - cron: "25 9 * * 0-4"   # 11:25 IL
     - cron: "25 11 * * 0-4"  # 13:25 IL
     - cron: "25 13 * * 0-4"  # 15:25 IL
     - cron: "25 15 * * 0-4"  # 17:25 IL
     - cron: "25 17 * * 0-4"  # 19:25 IL
     - cron: "25 19 * * 0-4"  # 21:25 IL
-    # Vineri
-    - cron: "25 7 * * 5"     # 09:25 IL
-    - cron: "25 9 * * 5"     # 11:25 IL
-    - cron: "25 11 * * 5"    # 13:25 IL
-    # Sâmbătă
-    - cron: "25 17 * * 6"    # 19:25 IL
-    - cron: "25 19 * * 6"    # 21:25 IL
-  workflow_dispatch:
-
-# GitHub cron rulează în UTC; orele de mai sus sunt aliniate pentru IL (UTC+2/UTC+3 cu DST)
-
-permissions:
-  contents: write   # permite commit/push din workflow
-
-concurrency:
-  group: update-chance
-  cancel-in-progress: false
+    - cron: "25 7 * * 5"     # vineri 09:25 IL
+    - cron: "25 9 * * 5"     # vineri 11:25 IL
+    - cron: "25 11 * * 5"    # vineri 13:25 IL
+    - cron: "25 17 * * 6"    # sâmbătă 19:25 IL
+    - cron: "25 19 * * 6"    # sâmbătă 21:25 IL
+  workflow_dispatch:          # rulează și manual
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo (full history)
-        uses: actions/checkout@v4
+      - name: Checkout repo (with token)
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0         # ca să putem face pull --rebase
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download Chance CSV (via Worker)
         run: |
-          set -e
           CSV_URL="https://broken-fog-19b8.laly100.workers.dev/"
-          curl -fsSL "$CSV_URL" -o chance.csv
-          echo "Downloaded size:"
-          wc -c chance.csv || true
-          echo "Preview first lines:"
-          head -n 5 chance.csv || true
+          curl -L "$CSV_URL" -o chance.csv
 
       - name: Commit and push (with GITHUB_TOKEN)
         run: |
@@ -53,6 +36,10 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add chance.csv
           git commit -m "update chance.csv" || echo "No changes to commit"
-          # sincronizează dacă a mai apărut ceva în remote între timp
-          git pull --rebase origin main || true
+
+          # sincronizare cu remote
+          git fetch origin main
+          git rebase origin/main || true
+
+          # push final
           git push origin HEAD:main
