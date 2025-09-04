@@ -1,0 +1,26 @@
+name: Update Chance CSV
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # rulează la fiecare oră
+  workflow_dispatch:       # îl poți porni și manual
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Download Chance CSV (via Worker)
+        run: |
+          CSV_URL="https://broken-fog-19b8.laly100.workers.dev/"
+          curl -L "$CSV_URL" -o chance.csv
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add chance.csv
+          git commit -m "update chance.csv" || echo "No changes to commit"
+          git push
