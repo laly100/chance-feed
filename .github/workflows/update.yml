@@ -1,31 +1,36 @@
 name: Update Chance CSV
 
-# 👇 Dă voie bot-ului GitHub Actions să facă push în repo
 permissions:
   contents: write
 
 on:
   schedule:
-    - cron: "0 * * * *"   # rulează la fiecare oră
-  workflow_dispatch:       # îl poți porni manual din Actions
+    - cron: "0 * * * *"   # la fiecare oră
+  workflow_dispatch:
 
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repo (with token)
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false   # folosim noi tokenul explicit
 
       - name: Download Chance CSV (via Worker)
         run: |
           CSV_URL="https://broken-fog-19b8.laly100.workers.dev/"
           curl -L "$CSV_URL" -o chance.csv
 
-      - name: Commit and push
+      - name: Commit and push (with GITHUB_TOKEN)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git config user.name  "GitHub Action"
           git add chance.csv
           git commit -m "update chance.csv" || echo "No changes to commit"
-          git push
+          # setează remote cu tokenul și fă push
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git
+          git push origin HEAD:${GITHUB_REF_NAME}
