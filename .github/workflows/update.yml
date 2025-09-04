@@ -19,32 +19,48 @@ on:
 permissions:
   contents: write
 
+# Evită coliziunile între rulări simultane
+concurrency:
+  group: chance-feed-main
+  cancel-in-progress: true
+
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo (full history)
+      - name: Checkout repo on main (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure local main tracks remote
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
 
       - name: Download Chance CSV (via Worker)
         run: |
+          set -e
           curl -fsSL "https://broken-fog-19b8.laly100.workers.dev/" -o chance.csv
 
-      - name: Commit changes
+      - name: Commit changes (only if needed)
         run: |
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add chance.csv
-          git diff --cached --quiet || git commit -m "update chance.csv"
-
-      - name: Pull with rebase
-        run: |
-          git pull --rebase origin main || true
+          if ! git diff --cached --quiet; then
+            git commit -m "update chance.csv"
+          else
+            echo "No changes in chance.csv; skipping commit."
+          fi
 
       - name: Push changes
         run: |
-          git push origin HEAD:main
+          # Dacă s-a făcut commit, împinge; altfel nu are ce împinge
+          if [ -n "$(git log origin/main..HEAD)" ]; then
+            git push origin main
+          else
+            echo "Nothing to push."
+          fi
