@@ -1,45 +1,68 @@
 name: Update Chance CSV
 
+# ✅ token scrie în repo
+permissions:
+  contents: write
+
 on:
   schedule:
-    - cron: "25 7 * * 0-4"   # 09:25 IL (duminică-joi)
+    - cron: "25 7 * * 0-4"   # 09:25 IL (D-J)
     - cron: "25 9 * * 0-4"   # 11:25 IL
     - cron: "25 11 * * 0-4"  # 13:25 IL
     - cron: "25 13 * * 0-4"  # 15:25 IL
     - cron: "25 15 * * 0-4"  # 17:25 IL
     - cron: "25 17 * * 0-4"  # 19:25 IL
     - cron: "25 19 * * 0-4"  # 21:25 IL
-    - cron: "25 7 * * 5"     # vineri 09:25 IL
-    - cron: "25 9 * * 5"     # vineri 11:25 IL
-    - cron: "25 11 * * 5"    # vineri 13:25 IL
-    - cron: "25 17 * * 6"    # sâmbătă 19:25 IL
-    - cron: "25 19 * * 6"    # sâmbătă 21:25 IL
-  workflow_dispatch:          # rulează și manual
+    - cron: "25 7 * * 5"     # Vineri 09:25 IL
+    - cron: "25 9 * * 5"     # Vineri 11:25 IL
+    - cron: "25 11 * * 5"    # Vineri 13:25 IL
+    - cron: "25 17 * * 6"    # Sâmbătă 19:25 IL
+    - cron: "25 19 * * 6"    # Sâmbătă 21:25 IL
+  workflow_dispatch:
+
+# 🔒 nu lăsa 2 runde să ruleze simultan
+concurrency:
+  group: chance-csv
+  cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo (with token)
+      - name: Checkout repo (full history, with token)
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0   # <— important pentru rebase
 
-      - name: Download Chance CSV (via Worker)
-        run: |
-          CSV_URL="https://broken-fog-19b8.laly100.workers.dev/"
-          curl -L "$CSV_URL" -o chance.csv
-
-      - name: Commit and push (with GITHUB_TOKEN)
+      - name: Set git identity
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "github-actions[bot]"
-          git add chance.csv
-          git commit -m "update chance.csv" || echo "No changes to commit"
 
-          # sincronizare cu remote
+      - name: Sync local with remote (rebase)
+        run: |
           git fetch origin main
-          git rebase origin/main || true
+          git checkout main
+          git pull --rebase origin main || true
 
-          # push final
+      - name: Download Chance CSV (via Worker)
+        run: |
+          set -e
+          CSV_URL="https://broken-fog-19b8.laly100.workers.dev/"
+          # 3 încercări cu backoff mic, în caz de hopuri de rețea
+          for i in 1 2 3; do
+            curl -fsSL "$CSV_URL" -o chance.csv && break || sleep 3
+          done
+          test -s chance.csv
+
+      - name: Commit if changed
+        run: |
+          git add chance.csv
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "update chance.csv"
+
+      - name: Push (fast-forward safe)
+        run: |
+          # dacă între timp a mai apărut un commit pe remote, rebase din nou
+          git pull --rebase origin main || true
           git push origin HEAD:main
