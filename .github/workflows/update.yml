@@ -1,28 +1,21 @@
 name: Update Chance CSV
 
-# GitHub Actions rulează CRON în UTC.
-# Israel (Asia/Jerusalem) = UTC+3 vara (DST).
-# Deci 09:25 IL = 06:25 UTC, 11:25 IL = 08:25 UTC, etc.
 on:
   schedule:
-    # Duminică–Joi (09:25, 11:25, 13:25, 15:25, 17:25, 19:25, 21:25 IL)
-    - cron: "25 6 * * 0-4"   # 09:25 IL
-    - cron: "25 8 * * 0-4"   # 11:25 IL
-    - cron: "25 10 * * 0-4"  # 13:25 IL
-    - cron: "25 12 * * 0-4"  # 15:25 IL
-    - cron: "25 14 * * 0-4"  # 17:25 IL
-    - cron: "25 16 * * 0-4"  # 19:25 IL
-    - cron: "25 18 * * 0-4"  # 21:25 IL
-    # Vineri (09:25, 11:25, 13:25 IL)
-    - cron: "25 6 * * 5"     # 09:25 IL
-    - cron: "25 8 * * 5"     # 11:25 IL
-    - cron: "25 10 * * 5"    # 13:25 IL
-    # Sâmbătă (19:25, 21:25 IL)
-    - cron: "25 16 * * 6"    # 19:25 IL
-    - cron: "25 18 * * 6"    # 21:25 IL
-  workflow_dispatch: {}
+    - cron: "25 6 * * 0-4"
+    - cron: "25 8 * * 0-4"
+    - cron: "25 10 * * 0-4"
+    - cron: "25 12 * * 0-4"
+    - cron: "25 14 * * 0-4"
+    - cron: "25 16 * * 0-4"
+    - cron: "25 18 * * 0-4"
+    - cron: "25 6 * * 5"
+    - cron: "25 8 * * 5"
+    - cron: "25 10 * * 5"
+    - cron: "25 16 * * 6"
+    - cron: "25 18 * * 6"
+  workflow_dispatch:
 
-# permite botului să scrie în repo
 permissions:
   contents: write
 
@@ -31,52 +24,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) ia toată istoria (obligatoriu pentru rebase)
       - name: Checkout repo (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # 2) descarcă CSV din Cloudflare Worker (output exact ca PAIS, cu titluri în ebraică)
       - name: Download Chance CSV (via Worker)
         run: |
-          set -e
-          CSV_URL="https://broken-fog-19b8.laly100.workers.dev/"
-          curl -fsSL "$CSV_URL" -o chance.csv
+          curl -fsSL "https://broken-fog-19b8.laly100.workers.dev/" -o chance.csv
 
-      # 3) verifică dacă s-a schimbat față de ce este în repo
-      - name: Detect changes
-        id: diff
-        shell: bash
-        run: |
-          set -e
-          CHANGED=0
-          if git ls-files --error-unmatch chance.csv >/dev/null 2>&1; then
-            if ! git diff --quiet -- chance.csv; then
-              CHANGED=1
-            fi
-          else
-            # prima rulare: fișier nou
-            CHANGED=1
-          fi
-          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
-
-      # 4) sincronizează, face commit doar dacă e nevoie
-      - name: Commit (if changed)
-        id: commit_step
-        if: steps.diff.outputs.changed == '1'
+      - name: Commit changes
         run: |
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add chance.csv
-          git commit -m "update chance.csv"
+          git diff --cached --quiet || git commit -m "update chance.csv"
 
-      # 5) rebase pe origin/main și push
-      - name: Pull (rebase) & Push
-        if: steps.diff.outputs.changed == '1'
+      - name: Pull with rebase
         run: |
-          set -e
-          git fetch origin main
           git pull --rebase origin main || true
+
+      - name: Push changes
+        run: |
           git push origin HEAD:main
