@@ -1,0 +1,61 @@
+{
+  "schema": "1.2",
+  "order": [
+    "chance0.csv",
+    "chance1.csv",
+    "chance2.csv",
+    "chance3.csv",
+    "chance4.csv"
+  ],
+  "header": [
+    "תאריך",
+    "הגרלה",
+    "תלתן",
+    "יהלום",
+    "לב",
+    "עלה"
+  ],
+  "notes": "Ordinea este vechi→nou. Fișierele chanceX.csv au antet identic.",
+  "parts": [
+    {
+      "file": "chance4.csv",
+      "rows": 10000,
+      "first_date": "09/03/1994",
+      "first_draw": "1",
+      "last_date": "20/07/2005",
+      "last_draw": "12999"
+    },
+    {
+      "file": "chance3.csv",
+      "rows": 10000,
+      "first_date": "20/07/2005",
+      "first_draw": "13000",
+      "last_date": "03/02/2011",
+      "last_draw": "22999"
+    },
+    {
+      "file": "chance2.csv",
+      "rows": 10000,
+      "first_date": "04/02/2011",
+      "first_draw": "23000",
+      "last_date": "26/01/2016",
+      "last_draw": "32999"
+    },
+    {
+      "file": "chance1.csv",
+      "rows": 10000,
+      "first_date": "26/01/2016",
+      "first_draw": "33000",
+      "last_date": "15/03/2021",
+      "last_draw": "42999"
+    },
+    {
+      "file": "chance0.csv",
+      "rows": 8580,
+      "first_date": "15/03/2021",
+      "first_draw": "43000",
+      "last_date": "05/09/2025",
+      "last_draw": "51579"
+    }
+  ]
+}
