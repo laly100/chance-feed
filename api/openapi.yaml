@@ -4,14 +4,15 @@ info:
   version: "1.0.0"
   description: API simplu pentru ca GPT-ul să poată încărca fișierul chance.csv direct din GitHub RAW.
 
+servers:
+  - url: https://raw.githubusercontent.com/laly100/chance-feed/main
+
 paths:
   /chance.csv:
     get:
       summary: Obține CSV direct din GitHub RAW
       description: Returnează fișierul complet chance.csv.
       operationId: getChanceCSVFromGithub
-      servers:
-        - url: https://raw.githubusercontent.com/laly100/chance-feed/main
       responses:
         "200":
           description: CSV returnat cu succes
@@ -19,7 +20,7 @@ paths:
             text/csv:
               schema:
                 type: string
-                description: Conținutul CSV (Windows-1255/UTF-8)
+                description: Conținutul complet al fișierului chance.csv (Windows-1255/UTF-8)
               examples:
                 ex1:
                   summary: Antet + primul rând
