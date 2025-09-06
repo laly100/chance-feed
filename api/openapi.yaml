@@ -1,0 +1,30 @@
+openapi: 3.0.0
+info:
+  title: Chance CSV API
+  version: "1.0.0"
+  description: API simplu pentru ca GPT-ul să poată încărca fișierul chance.csv direct din GitHub RAW.
+
+paths:
+  /chance.csv:
+    get:
+      summary: Obține CSV direct din GitHub RAW
+      description: Returnează fișierul complet chance.csv.
+      operationId: getChanceCSVFromGithub
+      servers:
+        - url: https://raw.githubusercontent.com/laly100/chance-feed/main
+      responses:
+        "200":
+          description: CSV returnat cu succes
+          content:
+            text/csv:
+              schema:
+                type: string
+                description: Conținutul CSV (Windows-1255/UTF-8)
+              examples:
+                ex1:
+                  summary: Antet + primul rând
+                  value: |
+                    תאריך,הגרלה,תלתן,יהלום,לב,עלה
+                    04/09/2025,51576,10,A,J,9
+        "4XX":
+          description: Eroare la preluarea CSV din GitHub RAW
