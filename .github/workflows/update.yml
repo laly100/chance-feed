@@ -64,3 +64,21 @@ jobs:
           else
             echo "Nothing to push."
           fi
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Split history into 10k parts + manifest
+        run: |
+            chmod +x scripts/split_into_parts.py
+            python scripts/split_into_parts.py
+
+      - name: Commit parts (if changed)
+        run: |
+          git add chance*.csv parts/index.json
+          if ! git diff --cached --quiet; then
+            git commit -m "regenerate parts (10k) + manifest"
+          else
+            echo "No changes in parts."
+          fi
