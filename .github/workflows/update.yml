@@ -2,24 +2,59 @@ name: Update Chance CSV
 
 on:
   schedule:
-    - cron: "25 6 * * 0-4"
-    - cron: "25 8 * * 0-4"
-    - cron: "25 10 * * 0-4"
-    - cron: "25 12 * * 0-4"
-    - cron: "25 14 * * 0-4"
-    - cron: "25 16 * * 0-4"
-    - cron: "25 18 * * 0-4"
-    - cron: "25 6 * * 5"
-    - cron: "25 8 * * 5"
-    - cron: "25 10 * * 5"
-    - cron: "25 16 * * 6"
-    - cron: "25 18 * * 6"
+    # =========================
+    # VARĂ (IDT, UTC+3) — martie–octombrie
+    # Duminică–Joi (IL: 09:30, 11:30, 13:30, 15:30, 17:30, 19:30, 21:30)
+    - cron: "30 6 * 3-10 0-4"
+    - cron: "30 8 * 3-10 0-4"
+    - cron: "30 10 * 3-10 0-4"
+    - cron: "30 12 * 3-10 0-4"
+    - cron: "30 14 * 3-10 0-4"
+    - cron: "30 16 * 3-10 0-4"
+    - cron: "30 18 * 3-10 0-4"
+    # Vineri (IL: 10:30, 12:30, 14:30)
+    - cron: "30 7 * 3-10 5"
+    - cron: "30 9 * 3-10 5"
+    - cron: "30 11 * 3-10 5"
+    # Sâmbătă (după 21:30 și 23:30 IL) → 19:00 și 21:00 UTC
+    - cron: "0 19 * 3-10 6"
+    - cron: "0 21 * 3-10 6"
+
+    # =========================
+    # IARNĂ (IST, UTC+2) — noiembrie–februarie
+    # Duminică–Joi (IL: 09:30 ... 21:30)
+    - cron: "30 7 * 11,12 0-4"
+    - cron: "30 9 * 11,12 0-4"
+    - cron: "30 11 * 11,12 0-4"
+    - cron: "30 13 * 11,12 0-4"
+    - cron: "30 15 * 11,12 0-4"
+    - cron: "30 17 * 11,12 0-4"
+    - cron: "30 19 * 11,12 0-4"
+    - cron: "30 7 * 1-2 0-4"
+    - cron: "30 9 * 1-2 0-4"
+    - cron: "30 11 * 1-2 0-4"
+    - cron: "30 13 * 1-2 0-4"
+    - cron: "30 15 * 1-2 0-4"
+    - cron: "30 17 * 1-2 0-4"
+    - cron: "30 19 * 1-2 0-4"
+    # Vineri (IL: 10:30, 12:30, 14:30)
+    - cron: "30 8 * 11,12 5"
+    - cron: "30 10 * 11,12 5"
+    - cron: "30 12 * 11,12 5"
+    - cron: "30 8 * 1-2 5"
+    - cron: "30 10 * 1-2 5"
+    - cron: "30 12 * 1-2 5"
+    # Sâmbătă (după 21:30 și 23:30 IL) → 20:00 și 22:00 UTC
+    - cron: "0 20 * 11,12 6"
+    - cron: "0 22 * 11,12 6"
+    - cron: "0 20 * 1-2 6"
+    - cron: "0 22 * 1-2 6"
+
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# Evită coliziunile între rulări simultane
 concurrency:
   group: chance-feed-main
   cancel-in-progress: true
@@ -28,7 +63,7 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo on main (full history)
+      - name: Checkout repo on main
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -40,30 +75,13 @@ jobs:
           git fetch origin main
           git checkout -B main origin/main
 
+      # Descarcă CSV via Worker (mai robust decât site-ul direct)
       - name: Download Chance CSV (via Worker)
         run: |
           set -e
           curl -fsSL "https://broken-fog-19b8.laly100.workers.dev/" -o chance.csv
 
-      - name: Commit changes (only if needed)
-        run: |
-          git config user.email "action@github.com"
-          git config user.name "GitHub Action"
-          git add chance.csv
-          if ! git diff --cached --quiet; then
-            git commit -m "update chance.csv"
-          else
-            echo "No changes in chance.csv; skipping commit."
-          fi
-
-      - name: Push changes
-        run: |
-          # Dacă s-a făcut commit, împinge; altfel nu are ce împinge
-          if [ -n "$(git log origin/main..HEAD)" ]; then
-            git push origin main
-          else
-            echo "Nothing to push."
-          fi
+      # Python pentru split & manifest
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -71,14 +89,24 @@ jobs:
 
       - name: Split history into 10k parts + manifest
         run: |
-            chmod +x scripts/split_into_parts.py
-            python scripts/split_into_parts.py
+          chmod +x scripts/split_into_parts.py
+          python scripts/split_into_parts.py
 
-      - name: Commit parts (if changed)
+      - name: Commit changes (if any)
         run: |
-          git add chance*.csv parts/index.json
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add chance.csv chance*.csv parts/index.json
           if ! git diff --cached --quiet; then
-            git commit -m "regenerate parts (10k) + manifest"
+            git commit -m "update chance.csv + regenerate parts and manifest"
           else
-            echo "No changes in parts."
+            echo "No changes to commit."
+          fi
+
+      - name: Push changes
+        run: |
+          if [ -n "$(git log origin/main..HEAD)" ]; then
+            git push origin main
+          else
+            echo "Nothing to push."
           fi
