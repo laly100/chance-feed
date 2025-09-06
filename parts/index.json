@@ -15,7 +15,7 @@
     "לב",
     "עלה"
   ],
-  "notes": "Ordinea este vechi→nou. Fișierele chanceX.csv au antet identic.",
+  "notes": "Ordine VECHI→NOU; fișierele chanceX.csv au același antet.",
   "parts": [
     {
       "file": "chance4.csv",
@@ -57,5 +57,9 @@
       "last_date": "05/09/2025",
       "last_draw": "51579"
     }
-  ]
+  ],
+  "mini": {
+    "latest_1000": "mini/latest_1000.csv",
+    "latest_2000": "mini/latest_2000.csv"
+  }
 }
