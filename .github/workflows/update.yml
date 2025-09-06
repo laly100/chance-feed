@@ -55,7 +55,6 @@ on:
 permissions:
   contents: write
 
-# Evită coliziunile între rulări simultane
 concurrency:
   group: chance-feed-main
   cancel-in-progress: true
@@ -96,15 +95,24 @@ jobs:
 
       - name: Split history into 10k parts + manifest
         run: |
+          set -e
           chmod +x scripts/split_into_parts.py
           python scripts/split_into_parts.py
+          echo "---- AFTER SPLIT, SHOW TREE ----"
+          ls -la
+          echo "---- PARTS DIR ----"
+          ls -la parts || true
+          echo "---- CHECK MANIFEST ----"
+          test -f parts/index.json || (echo "ERROR: parts/index.json missing" && exit 1)
 
-      - name: Commit changes (if any)
+      - name: Commit changes (force-add new files)
         run: |
+          set -e
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
-          git add chance.csv chance*.csv parts/index.json
+          git add -A
           if ! git diff --cached --quiet; then
+            echo "Committing changes..."
             git commit -m "update chance.csv + regenerate parts and manifest"
           else
             echo "No changes to commit."
