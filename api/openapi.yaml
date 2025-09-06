@@ -1,40 +1,109 @@
 openapi: 3.0.0
 info:
   title: Chance Parts API
-  version: "1.0.0"
-  description: Manifest + fișiere CSV paginate (10.000 rânduri) pentru TOT istoricul.
+  version: "1.1.0"
+  description: >
+    API minimal pentru GPT:
+      • /parts/index.json — manifestul care listează fișierele CSV în ordinea corectă (VECHI→NOU).
+      • /{file} — descarcă un fișier CSV anume (chance0.csv … chanceN.csv sau chance.csv).
+      • /health — verificare rapidă că repo-ul răspunde.
+    GPT trebuie să parcurgă fișierele exact în ordinea din manifest (vechi→nou) pentru calcule corecte
+    și să inverseze doar la afișare (nou→vechi).
 
 servers:
   - url: https://raw.githubusercontent.com/laly100/chance-feed/main
 
 paths:
+  /health:
+    get:
+      operationId: health
+      summary: Health check
+      description: Returnează un mic text dacă repo-ul este accesibil.
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                ok:
+                  value: "ok"
+
   /parts/index.json:
     get:
       operationId: getManifest
-      summary: Manifestul (ordinea vechi→nou)
+      summary: Manifestul cu ordinea fișierelor (VECHI→NOU)
+      description: Returnează JSON cu câmpurile "order", "header", "parts".
       responses:
         "200":
           description: OK
           content:
             application/json:
-              schema: { type: object }
+              schema:
+                $ref: "#/components/schemas/Manifest"
+        "404":
+          description: Manifest inexistent
 
   /{file}:
     get:
-      operationId: getCsvPart
-      summary: Descarcă un fișier CSV (chance0.csv … chanceX.csv)
+      operationId: getCsvFile
+      summary: Descarcă un fișier CSV (chance0.csv … chanceN.csv) sau chance.csv
       parameters:
         - in: path
           name: file
           required: true
+          description: Numele fișierului CSV din repo (ex. chance0.csv, chance3.csv, chance.csv).
           schema:
             type: string
+            pattern: "^(chance(\\d+)\\.csv|chance\\.csv)$"
             example: chance0.csv
       responses:
         "200":
-          description: OK
+          description: Conținut CSV (UTF-8)
           content:
             text/csv:
-              schema: { type: string }
+              schema:
+                type: string
+                description: Conținutul CSV ca text
         "404":
-          description: Not found
+          description: Fișier inexistent
+
+components:
+  schemas:
+    Manifest:
+      type: object
+      additionalProperties: false
+      required: [schema, order, header]
+      properties:
+        schema:
+          type: string
+          example: "1.2"
+        order:
+          type: array
+          description: Lista fișierelor în ordinea VECHI→NOU (de ex. ["chance4.csv","chance3.csv",...,"chance0.csv"])
+          items:
+            type: string
+            pattern: "^chance\\d+\\.csv$"
+        header:
+          type: array
+          description: Antetul standard al CSV-urilor
+          items:
+            type: string
+          example: ["תאריך","הגרלה","תלתן","יהלום","לב","עלה"]
+        notes:
+          type: string
+          example: "Ordinea este vechi→nou. Fișierele chanceX.csv au antet identic."
+        parts:
+          type: array
+          description: Rezumat opțional per fișier
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              file:       { type: string, example: "chance0.csv" }
+              rows:       { type: integer, example: 9876 }
+              first_date: { type: [string, "null"], example: "12/03/2020" }
+              first_draw: { type: [string, "null"], example: "34567" }
+              last_date:  { type: [string, "null"], example: "05/09/2025" }
+              last_draw:  { type: [string, "null"], example: "51579" }
