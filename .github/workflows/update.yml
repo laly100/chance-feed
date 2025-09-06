@@ -55,6 +55,7 @@ on:
 permissions:
   contents: write
 
+# Evită coliziunile între rulări simultane
 concurrency:
   group: chance-feed-main
   cancel-in-progress: true
@@ -63,7 +64,7 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo on main
+      - name: Checkout repo on main (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -75,17 +76,19 @@ jobs:
           git fetch origin main
           git checkout -B main origin/main
 
-            - name: Download Chance CSV (via Worker + fallback)
+      - name: Download Chance CSV (Worker → RAW fallback)
         run: |
           set -e
+          echo "Trying Worker..."
           if curl -fsSL "https://broken-fog-19b8.laly100.workers.dev/" -o chance.csv; then
-            echo "Downloaded via Worker"
+            echo "✓ Downloaded via Worker"
           else
-            echo "Worker failed, fallback to GitHub RAW"
+            echo "Worker failed. Fallback to GitHub RAW..."
             curl -fsSL "https://raw.githubusercontent.com/laly100/chance-feed/main/chance.csv" -o chance.csv
+            echo "✓ Downloaded via RAW"
           fi
+          test -s chance.csv
 
-      # Python pentru split & manifest
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
