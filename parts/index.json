@@ -51,11 +51,11 @@
     },
     {
       "file": "chance0.csv",
-      "rows": 9624,
+      "rows": 9626,
       "first_date": "15/03/2021",
       "first_draw": "43000",
       "last_date": "22/03/2026",
-      "last_draw": "52623"
+      "last_draw": "52625"
     }
   ],
   "mini": {
