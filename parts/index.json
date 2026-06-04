@@ -5,7 +5,8 @@
     "chance1.csv",
     "chance2.csv",
     "chance3.csv",
-    "chance4.csv"
+    "chance4.csv",
+    "chance5.csv"
   ],
   "header": [
     "תאריך",
@@ -18,7 +19,7 @@
   "notes": "Ordine VECHI→NOU; fișierele chanceX.csv au același antet.",
   "parts": [
     {
-      "file": "chance4.csv",
+      "file": "chance5.csv",
       "rows": 10000,
       "first_date": "09/03/1994",
       "first_draw": "1",
@@ -26,7 +27,7 @@
       "last_draw": "12999"
     },
     {
-      "file": "chance3.csv",
+      "file": "chance4.csv",
       "rows": 10000,
       "first_date": "20/07/2005",
       "first_draw": "13000",
@@ -34,7 +35,7 @@
       "last_draw": "22999"
     },
     {
-      "file": "chance2.csv",
+      "file": "chance3.csv",
       "rows": 10000,
       "first_date": "04/02/2011",
       "first_draw": "23000",
@@ -42,7 +43,7 @@
       "last_draw": "32999"
     },
     {
-      "file": "chance1.csv",
+      "file": "chance2.csv",
       "rows": 10000,
       "first_date": "26/01/2016",
       "first_draw": "33000",
@@ -50,12 +51,20 @@
       "last_draw": "42999"
     },
     {
-      "file": "chance0.csv",
-      "rows": 9999,
+      "file": "chance1.csv",
+      "rows": 10000,
       "first_date": "15/03/2021",
       "first_draw": "43000",
-      "last_date": "03/06/2026",
-      "last_draw": "52998"
+      "last_date": "04/06/2026",
+      "last_draw": "52999"
+    },
+    {
+      "file": "chance0.csv",
+      "rows": 2,
+      "first_date": "04/06/2026",
+      "first_draw": "53000",
+      "last_date": "04/06/2026",
+      "last_draw": "53001"
     }
   ],
   "mini": {
